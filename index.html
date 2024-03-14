@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MSIT PREMIER LEAGUE</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+</head>
+<body>
+  <div class="container">
+    <h1 class="text-center">MSIT PREMIER LEAGUE</h1>
+    <form id="team-form" class="mb-3">
+      <div class="input-group">
+        <input type="text" class="form-control" id="team-name" placeholder="Enter team name">
+        <button type="submit" class="btn btn-primary">Add Team</button>
+      </div>
+    </form>
+    <div id="teams-list" class="mb-3"></div>
+    <button id="generate-button" class="btn btn-primary">Generate</button>
+    <div id="player-details" class="border p-3 mt-3"></div>
+    <select id="team-select" class="form-select mt-3" style="display: none;"></select>
+    <button id="add-to-team" class="btn btn-primary mt-3" style="display: none;">Add to Team</button>
+  </div>
+
+  <script>
+    // Function to read player data from CSV file
+    function readPlayerData(filename, callback) {
+      const xhr = new XMLHttpRequest();
+      xhr.open("GET", filename, true);
+      xhr.onload = function() {
+        if (this.status === 200) {
+          const data = [];
+          const lines = this.responseText.split("\n");
+          // Skip the header row
+          for (let line = 1; line < lines.length; line++) {
+            const fields = lines[line].split(",").map(field => field.trim());
+            data.push(fields);
+          }
+          callback(data);
+        } else {
+          console.error("Error reading file:", this.statusText);
+        }
+      };
+      xhr.onerror = function() {
+        console.error("Error fetching data from file.");
+      };
+      xhr.send();
+    }
+
+    const players = []; // Placeholder for player data
+    const generateButton = document.getElementById("generate-button");
+    const playerDetailsDiv = document.getElementById("player-details");
+    const teamForm = document.getElementById("team-form");
+    const teamsListDiv = document.getElementById("teams-list");
+    const teamSelect = document.getElementById("team-select");
+    const addToTeamButton = document.getElementById("add-to-team");
+
+    const teams = {}; // Placeholder for team names and players
+
+    // Read player data on page load
+    readPlayerData("listofplayer.csv", function(data) {
+      players.push(...data); // Add fetched data to players array
+    });
+
+    teamForm.addEventListener("submit", function(event) {
+      event.preventDefault();
+      const teamNameInput = document.getElementById("team-name");
+      const teamName = teamNameInput.value.trim();
+      if (teamName) {
+        // Check if team with the same name already exists
+        if (teams.hasOwnProperty(teamName)) {
+          alert("Team with the same name already exists. Please enter a different team name.");
+          return;
+        }
+        const teamElement = document.createElement("div");
+        teamElement.textContent = teamName;
+        teamsListDiv.appendChild(teamElement);
+        teamNameInput.value = ""; // Clear input field
+        teams[teamName] = []; // Initialize an empty array for the team's players
+
+        // Update team select options
+        const option = document.createElement("option");
+        option.text = teamName;
+        teamSelect.add(option);
+      }
+    });
+
+    generateButton.addEventListener("click", function() {
+      // Check if data is loaded before proceeding
+      if (!players.length) {
+        alert("Player data is not yet loaded. Please try again shortly.");
+        return;
+      }
+
+      // Randomly select a player
+      const randomIndex = Math.floor(Math.random() * players.length);
+      const selectedPlayer = players[randomIndex];
+
+      // Clear previous content
+      playerDetailsDiv.innerHTML = "";
+
+      // Display player details with labels
+      for (let i = 0; i < selectedPlayer.length; i++) {
+        const detailSpan = document.createElement("span");
+        const label = getLabel(i); // Function to get label based on index
+        detailSpan.textContent = `${label}: ${selectedPlayer[i]}`;
+        playerDetailsDiv.appendChild(detailSpan);
+        if (i < selectedPlayer.length - 1) {
+          playerDetailsDiv.appendChild(document.createElement("br"));
+        }
+      }
+
+      // Show team select and add to team button
+      teamSelect.style.display = "block";
+      addToTeamButton.style.display = "block";
+
+      // Store selected player information in the teams object
+      const teamName = selectedPlayer[0]; // Use player's first field as team name
+      if (teams.hasOwnProperty(teamName)) {
+        teams[teamName].push(selectedPlayer); // Add player to team's list of players
+      }
+    });
+
+    addToTeamButton.addEventListener("click", function() {
+      const selectedTeam = teamSelect.value;
+      if (!selectedTeam) {
+        alert("Please select a team to add the player.");
+        return;
+      }
+      const selectedPlayer = playerDetailsDiv.querySelector(":first-child").textContent.split(": ")[1]; // Extracting only the player name
+      const teamElement = document.createElement("div");
+      teamElement.textContent = `${selectedPlayer} - ${selectedTeam}`;
+      teamsListDiv.appendChild(teamElement);
+      // Hide team select and add to team button
+      teamSelect.style.display = "none";
+      addToTeamButton.style.display = "none";
+    });
+
+    // Function to get label based on index
+    function getLabel(index) {
+      const labels = ["Name", "Phone number", "Batch", "Batting hand", "Ability", "Bowling hand", "Tier"];
+      return labels[index];
+    }
+
+  </script>
+  </body>
+  <style>
+    body{
+        font-size: 35px;
+    }
+  </style>
+</html>
